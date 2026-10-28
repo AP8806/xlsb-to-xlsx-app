@@ -3,14 +3,14 @@ import zipfile
 import streamlit as st
 from converter import convert_uploaded_files
 
-# Page Setup
+# Page Configuration
 st.set_page_config(
     page_title="XLSB to XLSX Pro Converter",
     page_icon="⚡",
     layout="centered"
 )
 
-# Custom CSS - Frontend Bhari Disnyasathi
+# Custom CSS for Modern UI
 st.markdown("""
 <style>
     .hero-box {
@@ -52,15 +52,15 @@ st.markdown("""
 st.markdown("""
 <div class="hero-box">
     <h1>⚡ XLSB to XLSX Converter</h1>
-    <p>Tumchya Excel Binary (.xlsb) files eka click var Standard Excel (.xlsx) madhe convert kara</p>
+    <p>Convert your Excel Binary (.xlsb) files into Standard Excel (.xlsx) format in one click</p>
 </div>
 """, unsafe_allow_html=True)
 
-# Session State (User ne konta option click kela te lakshat thevnyasathi)
+# Session State to track selected mode
 if "selected_mode" not in st.session_state:
     st.session_state.selected_mode = None
 
-st.markdown("### 👇 Step 1: Conversion Mode Nivda")
+st.markdown("### 👇 Step 1: Select Conversion Mode")
 
 col1, col2 = st.columns(2)
 
@@ -68,10 +68,10 @@ with col1:
     st.markdown("""
     <div class="mode-card">
         <h3>📄 Single File</h3>
-        <p style="color:gray; font-size:0.9rem;">Ekach .xlsb file upload karun lagech .xlsx download kara</p>
+        <p style="color:gray; font-size:0.9rem;">Upload a single .xlsb file and download the converted .xlsx file instantly</p>
     </div>
     """, unsafe_allow_html=True)
-    if st.button("📄 Single File Select Kara", use_container_width=True, 
+    if st.button("📄 Select Single File", use_container_width=True, 
                  type="primary" if st.session_state.selected_mode == "single" else "secondary"):
         st.session_state.selected_mode = "single"
         st.rerun()
@@ -80,10 +80,10 @@ with col2:
     st.markdown("""
     <div class="mode-card">
         <h3>📚 Multiple Files</h3>
-        <p style="color:gray; font-size:0.9rem;">Anek .xlsb files ekatra convert karun ZIP download kara</p>
+        <p style="color:gray; font-size:0.9rem;">Batch convert multiple .xlsb files at once and download as a ZIP archive</p>
     </div>
     """, unsafe_allow_html=True)
-    if st.button("📚 Multiple Files Select Kara", use_container_width=True, 
+    if st.button("📚 Select Multiple Files", use_container_width=True, 
                  type="primary" if st.session_state.selected_mode == "multiple" else "secondary"):
         st.session_state.selected_mode = "multiple"
         st.rerun()
@@ -94,9 +94,9 @@ st.divider()
 # OPTION 1: SINGLE FILE UPLOAD & CONVERT
 # =========================================================
 if st.session_state.selected_mode == "single":
-    st.markdown("### 📤 Step 2: Single `.xlsb` File Upload Kara")
+    st.markdown("### 📤 Step 2: Upload a Single `.xlsb` File")
     single_file = st.file_uploader(
-        "Tumchi .xlsb file ithe drag & drop kara kiva Browse var click kara",
+        "Drag and drop your .xlsb file here or click Browse files",
         type=["xlsb"],
         accept_multiple_files=False,
         key="single_uploader"
@@ -107,13 +107,13 @@ if st.session_state.selected_mode == "single":
         st.info(f"📎 **Selected File:** `{single_file.name}` ({file_kb} KB)")
 
         if st.button("🚀 Convert to XLSX", type="primary", use_container_width=True):
-            with st.spinner("⏳ File convert hot ahe, krupaya thamba..."):
+            with st.spinner("⏳ Converting your file, please wait..."):
                 converted, failed = convert_uploaded_files([single_file])
 
             if converted:
                 out_name, out_bytes = converted[0]
                 st.balloons()
-                st.success(f"✅ `{out_name}` yashasviritya tayar jhali ahe!")
+                st.success(f"✅ `{out_name}` has been converted successfully!")
                 st.download_button(
                     label=f"📥 Download {out_name}",
                     data=out_bytes,
@@ -123,22 +123,22 @@ if st.session_state.selected_mode == "single":
                     use_container_width=True
                 )
             if failed:
-                st.error(f"❌ Error ({failed[0][0]}): {failed[0][1]}")
+                st.error(f"❌ Conversion Failed ({failed[0][0]}): {failed[0][1]}")
 
 # =========================================================
 # OPTION 2: MULTIPLE FILES UPLOAD & CONVERT
 # =========================================================
 elif st.session_state.selected_mode == "multiple":
-    st.markdown("### 📤 Step 2: Multiple `.xlsb` Files Upload Kara")
+    st.markdown("### 📤 Step 2: Upload Multiple `.xlsb` Files")
     multi_files = st.file_uploader(
-        "Ek kiva adhik .xlsb files ekatra select kara",
+        "Select or drag and drop one or more .xlsb files",
         type=["xlsb"],
         accept_multiple_files=True,
         key="multi_uploader"
     )
 
     if multi_files:
-        st.info(f"📂 Ekun **{len(multi_files)}** files upload sathi tayar ahet.")
+        st.info(f"📂 Total **{len(multi_files)}** file(s) ready for conversion.")
 
         if st.button(f"⚡ Convert All ({len(multi_files)} Files)", type="primary", use_container_width=True):
             progress_bar = st.progress(0)
@@ -151,7 +151,7 @@ elif st.session_state.selected_mode == "multiple":
             converted, failed = convert_uploaded_files(multi_files, progress_callback=update_ui)
             status_box.empty()
 
-            # Metrics Dakhavne
+            # Summary Metrics
             m1, m2, m3 = st.columns(3)
             m1.metric("📂 Total Files", len(multi_files))
             m2.metric("✅ Converted", len(converted))
@@ -159,9 +159,9 @@ elif st.session_state.selected_mode == "multiple":
 
             if converted:
                 st.balloons()
-                st.success("🎉 Conversion purna jhale! Khali click karun download kara.")
+                st.success("🎉 All files converted successfully! Click below to download.")
 
-                # ZIP File Tayar Karne
+                # Create ZIP Archive
                 zip_buffer = io.BytesIO()
                 with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zf:
                     for fname, fbytes in converted:
@@ -176,11 +176,11 @@ elif st.session_state.selected_mode == "multiple":
                     use_container_width=True
                 )
 
-                # Ek-ek file vegli download karaychi asel tar
-                with st.expander("📄 Individual Files Download Kara"):
+                # Individual File Downloads
+                with st.expander("📄 Download Individual Files"):
                     for idx, (fname, fbytes) in enumerate(converted):
                         st.download_button(
-                            label=f"📥 {fname}",
+                            label=f"📥 Download {fname}",
                             data=fbytes,
                             file_name=fname,
                             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -188,9 +188,9 @@ elif st.session_state.selected_mode == "multiple":
                         )
 
             if failed:
-                st.warning("⚠️ Kahi files convert jhalya nahit:")
+                st.warning("⚠️ Some files could not be converted:")
                 for fname, err in failed:
                     st.error(f"**{fname}**: {err}")
 
 else:
-    st.info("👆 Suruvat karnyasathi varil **Single File** kiva **Multiple Files** button var click kara.")
+    st.info("👆 Please click on **Select Single File** or **Select Multiple Files** above to get started.")
